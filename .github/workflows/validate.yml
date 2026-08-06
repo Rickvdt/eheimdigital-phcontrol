@@ -3,23 +3,33 @@ name: Validate
 on:
   push:
   pull_request:
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
-jobs:
-  hacs:
-    name: HACS validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hacs/action@main
-        with:
-          category: integration
+# NOTE: This is a *custom-repository* integration that intentionally overrides
+# the built-in `eheimdigital` domain. It is not meant for the HACS default store,
+# so the hacs/action and home-assistant/hassfest validations (which check domain
+# uniqueness, brand assets and repo topics for new core integrations) do not apply
+# here. This workflow just sanity-checks that the code and JSON are well-formed.
 
-  hassfest:
-    name: Hassfest validation
+jobs:
+  syntax:
+    name: Syntax & JSON
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: home-assistant/actions/hassfest@master
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Byte-compile the integration
+        run: python -m compileall -q custom_components/eheimdigital
+      - name: Validate JSON files
+        run: |
+          python - <<'PY'
+          import glob, json
+          files = glob.glob("custom_components/eheimdigital/**/*.json", recursive=True)
+          files += ["hacs.json"]
+          for f in sorted(files):
+              with open(f, encoding="utf-8") as fh:
+                  json.load(fh)
+              print("OK", f)
+          PY
