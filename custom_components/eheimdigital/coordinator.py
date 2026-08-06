@@ -51,6 +51,16 @@ class EheimDigitalUpdateCoordinator(
             device_found_callback=self._async_device_found,
             main_device_added_event=self.main_device_added_event,
         )
+        # Diagnostic aid: the library logs received messages but not sent ones.
+        # Wrap send_packet so every outgoing packet (incl. writes) is logged at
+        # debug. Enable with logger `custom_components.eheimdigital: debug`.
+        _original_send_packet = self.hub.send_packet
+
+        async def _logged_send_packet(packet: dict) -> None:
+            LOGGER.debug("Sending packet to hub: %s", packet)
+            await _original_send_packet(packet)
+
+        self.hub.send_packet = _logged_send_packet  # type: ignore[method-assign]
         self.known_devices: set[str] = set()
         self.incomplete_devices: set[str] = set()
         self.platform_callbacks: set[AsyncSetupDeviceEntitiesCallback] = set()
