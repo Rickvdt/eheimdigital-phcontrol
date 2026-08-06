@@ -1,0 +1,14 @@
+# Reference material (not part of the shipped integration)
+_reference/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

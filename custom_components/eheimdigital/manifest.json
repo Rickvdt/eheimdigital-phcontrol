@@ -1,0 +1,16 @@
+{
+  "domain": "eheimdigital",
+  "name": "EHEIM Digital (pHcontrol)",
+  "codeowners": ["@autinerd"],
+  "config_flow": true,
+  "documentation": "https://github.com/Rickvdt/eheimdigital-phcontrol",
+  "issue_tracker": "https://github.com/Rickvdt/eheimdigital-phcontrol/issues",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "loggers": ["eheimdigital"],
+  "requirements": ["eheimdigital==1.7.1"],
+  "version": "1.0.0",
+  "zeroconf": [
+    { "name": "eheimdigital._http._tcp.local.", "type": "_http._tcp.local." }
+  ]
+}
