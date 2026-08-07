@@ -89,6 +89,17 @@
         "default": "mdi:wrench-clock"
       }
     },
+    "text": {
+      "daycycle_schedule": {
+        "default": "mdi:chart-timeline-variant"
+      },
+      "partner_name": {
+        "default": "mdi:tag"
+      },
+      "sync": {
+        "default": "mdi:link-variant"
+      }
+    },
     "switch": {
       "acclimatization": {
         "default": "mdi:fishbowl-outline"

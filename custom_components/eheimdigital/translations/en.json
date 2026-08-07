@@ -214,6 +214,17 @@
         "name": "Remaining off time"
       }
     },
+    "text": {
+      "daycycle_schedule": {
+        "name": "Daycycle pH schedule"
+      },
+      "partner_name": {
+        "name": "Partner device name"
+      },
+      "sync": {
+        "name": "Sync device (MAC)"
+      }
+    },
     "switch": {
       "acclimatization": {
         "name": "Acclimatization"
