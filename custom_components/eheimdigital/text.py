@@ -11,7 +11,7 @@ from eheimdigital.device import EheimDigitalDevice
 from eheimdigital.ph_control import EheimDigitalPHControl
 
 from homeassistant.components.text import TextEntity, TextEntityDescription
-from homeassistant.const import EntityCategory
+from homeassistant.const import MAX_LENGTH_STATE_STATE, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -20,6 +20,10 @@ from .coordinator import EheimDigitalConfigEntry, EheimDigitalUpdateCoordinator
 from .entity import EheimDigitalEntity, exception_handler
 
 PARALLEL_UPDATES = 0
+
+# pHcontrol control range (pH 6-9) as sent on the wire (pH x 10).
+PH_MIN_RAW = 60
+PH_MAX_RAW = 90
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -30,16 +34,53 @@ class EheimDigitalTextDescription[_DeviceT: EheimDigitalDevice](TextEntityDescri
     set_value_fn: Callable[[_DeviceT, str], Awaitable[None]]
 
 
+def _schedule_value(device: EheimDigitalPHControl) -> str | None:
+    """Return the schedule as JSON, or None if it exceeds the state length limit.
+
+    A state longer than MAX_LENGTH_STATE_STATE makes TextEntity.state raise, so
+    report unknown instead of breaking the entity on very long schedules.
+    """
+    value = json.dumps(device.schedule)
+    return value if len(value) <= MAX_LENGTH_STATE_STATE else None
+
+
 async def _set_schedule(device: EheimDigitalPHControl, value: str) -> None:
-    """Parse a JSON schedule and send it to the device.
+    """Parse, validate and send a daycycle schedule.
 
     The schedule is a list of ``[minute_of_day, pH * 10]`` pairs, e.g.
     ``[[450, 74], [1080, 78]]`` (pH 7.4 from 07:30, pH 7.8 from 18:00).
+    Validated strictly: this is written straight to a device that doses CO2.
     """
     try:
         schedule = json.loads(value)
     except json.JSONDecodeError as err:
         raise HomeAssistantError(f"Invalid daycycle schedule JSON: {err}") from err
+    if not isinstance(schedule, list) or not schedule:
+        raise HomeAssistantError(
+            "Daycycle schedule must be a non-empty list of [minute, pH x 10] pairs,"
+            " for example [[450, 74], [1080, 78]]"
+        )
+    for entry in schedule:
+        if (
+            not isinstance(entry, list)
+            or len(entry) != 2
+            or not all(isinstance(item, int) for item in entry)
+        ):
+            raise HomeAssistantError(
+                f"Invalid daycycle schedule entry {entry!r}: expected a pair of"
+                " integers [minute, pH x 10], for example [450, 74]"
+            )
+        minute, ph_value = entry
+        if not 0 <= minute <= 1439:
+            raise HomeAssistantError(
+                f"Invalid daycycle schedule time {minute}: expected 0-1439"
+                " (minutes since midnight)"
+            )
+        if not PH_MIN_RAW <= ph_value <= PH_MAX_RAW:
+            raise HomeAssistantError(
+                f"Invalid daycycle schedule pH {ph_value}: expected"
+                f" {PH_MIN_RAW}-{PH_MAX_RAW} (pH x 10, control range pH 6-9)"
+            )
     await device.set_schedule(schedule)
 
 
@@ -66,8 +107,8 @@ PHCONTROL_DESCRIPTIONS: tuple[
         key="daycycle_schedule",
         translation_key="daycycle_schedule",
         entity_category=EntityCategory.CONFIG,
-        native_max=255,
-        value_fn=lambda device: json.dumps(device.schedule),
+        native_max=MAX_LENGTH_STATE_STATE,
+        value_fn=_schedule_value,
         set_value_fn=_set_schedule,
     ),
 )
