@@ -129,6 +129,8 @@ async def async_setup_entry(
         """Set up the time entities for one or multiple devices."""
         entities: list[EheimDigitalTime[Any]] = []
         for device in device_address.values():
+            if device.is_missing_data:
+                continue
             if isinstance(device, EheimDigitalFilter):
                 entities.extend(
                     EheimDigitalTime[EheimDigitalFilter](

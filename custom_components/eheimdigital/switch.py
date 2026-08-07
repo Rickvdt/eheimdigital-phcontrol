@@ -106,6 +106,8 @@ async def async_setup_entry(
         """Set up the switch entities for one or multiple devices."""
         entities: list[SwitchEntity] = []
         for device in device_address.values():
+            if device.is_missing_data:
+                continue
             if isinstance(device, (EheimDigitalClassicVario, EheimDigitalFilter)):
                 entities.append(EheimDigitalFilterSwitch(coordinator, device))
             if isinstance(device, EheimDigitalReeflexUV):

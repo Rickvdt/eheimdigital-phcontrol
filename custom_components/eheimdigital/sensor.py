@@ -138,6 +138,8 @@ async def async_setup_entry(
         """Set up the light entities for one or multiple devices."""
         entities: list[EheimDigitalSensor[Any]] = []
         for device in device_address.values():
+            if device.is_missing_data:
+                continue
             if isinstance(device, EheimDigitalFilter):
                 entities += [
                     EheimDigitalSensor[EheimDigitalFilter](

@@ -86,6 +86,8 @@ async def async_setup_entry(
         """Set up the binary sensor entities for one or multiple devices."""
         entities: list[EheimDigitalBinarySensor[Any]] = []
         for device in device_address.values():
+            if device.is_missing_data:
+                continue
             if isinstance(device, EheimDigitalReeflexUV):
                 entities += [
                     EheimDigitalBinarySensor[EheimDigitalReeflexUV](

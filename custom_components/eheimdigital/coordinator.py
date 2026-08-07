@@ -96,8 +96,11 @@ class EheimDigitalUpdateCoordinator(
         ):
             for platform_callback in self.platform_callbacks:
                 platform_callback({device_address: self.hub.devices[device_address]})
-            if device_address in self.incomplete_devices:
-                self.incomplete_devices.remove(device_address)
+            # Mark as fully handled so a later device_found/reconnect for the same
+            # device does not create duplicate entities (the guard above relies on
+            # this being populated; upstream currently leaves known_devices empty).
+            self.known_devices.add(device_address)
+            self.incomplete_devices.discard(device_address)
 
     async def _async_receive_callback(self) -> None:
         if any(self.incomplete_devices):

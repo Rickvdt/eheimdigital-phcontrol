@@ -267,6 +267,11 @@ async def async_setup_entry(
         """Set up the number entities for one or multiple devices."""
         entities: list[EheimDigitalNumber[Any]] = []
         for device in device_address.values():
+            if device.is_missing_data:
+                # Skip devices whose data has not arrived yet; they are dispatched
+                # again via the coordinator once complete. Prevents duplicate
+                # entities (and unique-id collisions) for late-arriving devices.
+                continue
             if isinstance(device, EheimDigitalClassicVario):
                 entities.extend(
                     EheimDigitalNumber[EheimDigitalClassicVario](
