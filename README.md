@@ -58,6 +58,26 @@ logger:
     eheimdigital: debug
 ```
 
+## Sub–pH-6 target (low-KH / aquasoil tanks)
+
+The EHEIM app limits the target pH to its "control range" of **pH 6–9**, which
+assumes carbonate (KH) buffering. Aquasoil substrates strip KH, so a stable
+target **below pH 6** is both achievable and often desired. Because this
+integration talks to the device directly over the local websocket instead of
+through the app, the Target pH number here goes down to **pH 4.0**.
+
+> [!WARNING]
+> This is an experiment and a safety-relevant one. Two caveats:
+> 1. **The firmware may still clamp the setpoint.** After setting a sub-6 target,
+>    check whether the Target pH entity *stays* at your value or snaps back to
+>    6.0 — snapping back means the device rejected it and there is nothing more
+>    we can do at the protocol level.
+> 2. **A too-low target drives more CO₂.** If the setpoint is below what the tank
+>    can reach, the valve stays open and CO₂ keeps rising, which can gas fish.
+>    Lower the target gradually, watch livestock and a drop checker, and keep a
+>    conservative day/night schedule. You are past the manufacturer's guardrails
+>    here — use your own judgement for your tank.
+
 ## Relationship to core & upstreaming
 
 - This fork tracks the **released** core integration (2026.8.0), not `dev`. Core PR [#177948](https://github.com/home-assistant/core/pull/177948) ("Eheimdigital revamp") restructures the coordinator to one-per-message-type; once it lands, the pHcontrol additions should be ported onto that model and submitted upstream (see HA discussion [#3219](https://github.com/orgs/home-assistant/discussions/3219)).

@@ -21,8 +21,10 @@ from .entity import EheimDigitalEntity, exception_handler
 
 PARALLEL_UPDATES = 0
 
-# pHcontrol control range (pH 6-9) as sent on the wire (pH x 10).
-PH_MIN_RAW = 60
+# Accepted schedule pH range as sent on the wire (pH x 10). The lower bound is
+# extended below the app's pH-6 "control range" for low-KH (aquasoil) tanks;
+# see the target_ph note in number.py.
+PH_MIN_RAW = 40
 PH_MAX_RAW = 90
 
 
@@ -79,7 +81,7 @@ async def _set_schedule(device: EheimDigitalPHControl, value: str) -> None:
         if not PH_MIN_RAW <= ph_value <= PH_MAX_RAW:
             raise HomeAssistantError(
                 f"Invalid daycycle schedule pH {ph_value}: expected"
-                f" {PH_MIN_RAW}-{PH_MAX_RAW} (pH x 10, control range pH 6-9)"
+                f" {PH_MIN_RAW}-{PH_MAX_RAW} (pH x 10, i.e. pH 4.0-9.0)"
             )
     await device.set_schedule(schedule)
 

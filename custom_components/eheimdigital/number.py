@@ -188,7 +188,12 @@ PHCONTROL_DESCRIPTIONS: tuple[
     EheimDigitalNumberDescription[EheimDigitalPHControl](
         key="target_ph",
         translation_key="target_ph",
-        native_min_value=6,
+        # The EHEIM app clamps the setpoint to the "control range" pH 6-9, which
+        # assumes carbonate buffering. Aquasoil substrates strip KH, so a stable
+        # target below pH 6 is both achievable and desired. We talk to the device
+        # directly (not via the app), so we allow down to pH 4 and let the
+        # firmware accept or reject it. See README for the safety note.
+        native_min_value=4,
         native_max_value=9,
         native_step=PRECISION_TENTHS,
         value_fn=lambda device: device.soll_ph,
