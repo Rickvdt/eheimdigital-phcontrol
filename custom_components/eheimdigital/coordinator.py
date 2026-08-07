@@ -51,16 +51,22 @@ class EheimDigitalUpdateCoordinator(
             device_found_callback=self._async_device_found,
             main_device_added_event=self.main_device_added_event,
         )
-        # Diagnostic aid: the library logs received messages but not sent ones.
-        # Wrap send_packet so every outgoing packet (incl. writes) is logged at
-        # debug. Enable with logger `custom_components.eheimdigital: debug`.
+        # Fix pHcontrol writes. The bundled eheimdigital library builds write
+        # packets with the "PH_DATA" title and from="USER" (the read-response
+        # envelope), but the device only accepts writes titled "SET_PH_PARAM"
+        # from "USER_OPT" -- confirmed by capturing the official app. Rewrite
+        # outgoing pH writes here until this is fixed upstream. The library only
+        # ever sends the "PH_DATA" title for writes (reads use "GET_PH_DATA"),
+        # so this match is unambiguous. Also logs every outgoing packet at debug.
         _original_send_packet = self.hub.send_packet
 
-        async def _logged_send_packet(packet: dict) -> None:
+        async def _send_packet(packet: dict) -> None:
+            if str(packet.get("title")) == "PH_DATA":
+                packet = {**packet, "title": "SET_PH_PARAM", "from": "USER_OPT"}
             LOGGER.debug("Sending packet to hub: %s", packet)
             await _original_send_packet(packet)
 
-        self.hub.send_packet = _logged_send_packet  # type: ignore[method-assign]
+        self.hub.send_packet = _send_packet  # type: ignore[method-assign]
         self.known_devices: set[str] = set()
         self.incomplete_devices: set[str] = set()
         self.platform_callbacks: set[AsyncSetupDeviceEntitiesCallback] = set()
